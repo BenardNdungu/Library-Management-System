@@ -26,13 +26,13 @@ if (!$member) {
     redirect('index.php');
 }
 
-// Get current loans
+// Get current lend
 $stmt = $pdo->prepare("
     SELECT l.*, 
            b.title as book_title,
            bc.accession_number,
            u.name as issued_by_name
-    FROM loans l
+    FROM lend l
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     JOIN users u ON l.issued_by = u.id
@@ -40,7 +40,7 @@ $stmt = $pdo->prepare("
     ORDER BY l.due_date ASC
 ");
 $stmt->execute([$memberId]);
-$currentLoans = $stmt->fetchAll();
+$currentlend = $stmt->fetchAll();
 
 // Get loan history
 $stmt = $pdo->prepare("
@@ -49,7 +49,7 @@ $stmt = $pdo->prepare("
            bc.accession_number,
            u.name as issued_by_name,
            u2.name as returned_to_name
-    FROM loans l
+    FROM lend l
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     JOIN users u ON l.issued_by = u.id
@@ -65,7 +65,7 @@ $loanHistory = $stmt->fetchAll();
 $stmt = $pdo->prepare("
     SELECT f.*, l.id as loan_id, b.title as book_title
     FROM fines f
-    JOIN loans l ON f.loan_id = l.id
+    JOIN lend l ON f.loan_id = l.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     WHERE f.member_id = ?
@@ -114,7 +114,7 @@ include_once '../../includes/sidebar.php';
             <a href="edit.php?id=<?php echo $memberId; ?>" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit Member
             </a>
-            <a href="../loans/create.php?member_id=<?php echo $memberId; ?>" class="btn btn-primary">
+            <a href="../lend/create.php?member_id=<?php echo $memberId; ?>" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i> Issue Book
             </a>
             <a href="index.php" class="btn btn-secondary">
@@ -183,7 +183,7 @@ include_once '../../includes/sidebar.php';
                         </div>
                         <div class="stat-info">
                             <div class="stat-label">Total Books Borrowed</div>
-                            <div class="stat-value"><?php echo $member['total_loans'] ?? 0; ?></div>
+                            <div class="stat-value"><?php echo $member['total_lend'] ?? 0; ?></div>
                         </div>
                     </div>
                     <div class="stat-card mb-2">
@@ -191,8 +191,8 @@ include_once '../../includes/sidebar.php';
                             <i class="fas fa-hand-holding-heart"></i>
                         </div>
                         <div class="stat-info">
-                            <div class="stat-label">Current Loans</div>
-                            <div class="stat-value"><?php echo $member['current_loans']; ?></div>
+                            <div class="stat-label">Current lend</div>
+                            <div class="stat-value"><?php echo $member['current_lend']; ?></div>
                         </div>
                     </div>
                     <div class="stat-card mb-2">
@@ -221,19 +221,19 @@ include_once '../../includes/sidebar.php';
             </div>
         </div>
         
-        <!-- Loans and History -->
+        <!-- lend and History -->
         <div class="col-8">
-            <!-- Current Loans -->
+            <!-- Current lend -->
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="fas fa-hand-holding-heart"></i> Current Loans</h5>
-                    <a href="../loans/create.php?member_id=<?php echo $memberId; ?>" class="btn btn-sm btn-primary">
+                    <h5><i class="fas fa-hand-holding-heart"></i> Current lend</h5>
+                    <a href="../lend/create.php?member_id=<?php echo $memberId; ?>" class="btn btn-sm btn-primary">
                         <i class="fas fa-plus"></i> Issue Book
                     </a>
                 </div>
                 <div class="card-body">
-                    <?php if (empty($currentLoans)): ?>
-                        <p class="text-muted text-center">No current loans</p>
+                    <?php if (empty($currentlend)): ?>
+                        <p class="text-muted text-center">No current lend</p>
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table">
@@ -248,7 +248,7 @@ include_once '../../includes/sidebar.php';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($currentLoans as $loan): ?>
+                                    <?php foreach ($currentlend as $loan): ?>
                                         <tr>
                                             <td><?php echo $loan['book_title']; ?></td>
                                             <td><?php echo $loan['accession_number']; ?></td>

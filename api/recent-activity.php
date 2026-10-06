@@ -14,10 +14,10 @@ $pdo = getDBConnection();
 $activities = [];
 
 try {
-    // Recent loans
+    // Recent lend
     $stmt = $pdo->query("
         SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -37,7 +37,7 @@ try {
     // Recent returns
     $stmt = $pdo->query("
         SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id

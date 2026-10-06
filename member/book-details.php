@@ -52,7 +52,7 @@ $memberId = $member['id'] ?? 0;
 // Check if member has reservation
 $hasReservation = false;
 if ($memberId) {
-    $stmt = $pdo->prepare("SELECT id FROM reservations WHERE member_id = ? AND book_id = ? AND status IN ('Pending', 'Ready')");
+    $stmt = $pdo->prepare("SELECT id FROM reservations WHERE member_id = ? AND book_id = ? AND status IN ('Pending', 'Ready') AND expiry_date >= CURDATE()");
     $stmt->execute([$memberId, $bookId]);
     $hasReservation = (bool) $stmt->fetch();
 }
@@ -71,7 +71,7 @@ $allCopies = $stmt->fetchAll();
 $hasLoan = false;
 if ($memberId) {
     $stmt = $pdo->prepare("
-        SELECT id FROM loans l
+        SELECT l.id FROM lend l
         JOIN book_copies bc ON l.book_copy_id = bc.id
         WHERE l.member_id = ? AND bc.book_id = ? AND l.status IN ('Borrowed', 'Overdue')
     ");
@@ -81,33 +81,16 @@ if ($memberId) {
 
 // Handle reservation
 if (isset($_GET['reserve']) && isset($_GET['csrf_token'])) {
-    requireCsrfToken($_GET['reserve']);
-    
-    if (!$memberId) {
-        $_SESSION['error'] = 'Member record not found. Please contact administrator.';
-    } elseif ($hasReservation) {
-        $_SESSION['error'] = 'You already have an active reservation for this book.';
-    } elseif ($book['available_copies'] > 0) {
-        $_SESSION['info'] = 'This book is available. Please visit the library to borrow it.';
-    } else {
-        $reservationPeriod = getSetting($pdo, 'reservation_period', DEFAULT_RESERVATION_PERIOD);
-        $expiryDate = date('Y-m-d', strtotime('+' . $reservationPeriod . ' days'));
-        
-        $stmt = $pdo->prepare("
-            INSERT INTO reservations (member_id, book_id, reservation_date, expiry_date, status)
-            VALUES (?, ?, CURDATE(), ?, 'Pending')
-        ");
-        $stmt->execute([$memberId, $bookId, $expiryDate]);
-        
-        createAuditLog($pdo, getCurrentUserId(), 'create_reservation', 'reservations', $pdo->lastInsertId(), 'Member reserved book from details page');
-        $_SESSION['success'] = 'Book reserved successfully. You will be notified when it becomes available.';
-    }
+    requireCsrfToken($_GET['csrf_token']);
+
+    $result = createPickupReservation($pdo, $memberId, $bookId);
+    $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
     redirect('book-details.php?id=' . $bookId);
 }
 
 // Handle cancel reservation
 if (isset($_GET['cancel_reservation']) && isset($_GET['csrf_token'])) {
-    requireCsrfToken($_GET['cancel_reservation']);
+    requireCsrfToken($_GET['csrf_token']);
     
     if ($memberId) {
         $stmt = $pdo->prepare("
@@ -215,30 +198,24 @@ include_once '../includes/sidebar.php';
                                 <?php endif; ?>
                             </div>
                             <div class="mt-3 d-flex gap-2 flex-wrap">
-                                <?php if ($book['available_copies'] > 0 && !$hasLoan): ?>
-                                    <a href="../loans/create.php?book_id=<?php echo $bookId; ?>" class="btn btn-success">
-                                        <i class="fas fa-hand-holding-heart"></i> Borrow This Book
-                                    </a>
-                                <?php elseif ($hasLoan): ?>
+                                <?php if ($hasLoan): ?>
                                     <span class="badge badge-info" style="font-size:14px;padding:8px 16px;">
                                         <i class="fas fa-check"></i> You have borrowed this book
                                     </span>
-                                <?php endif; ?>
-                                
-                                <?php if ($book['available_copies'] == 0 && !$hasReservation && !$hasLoan): ?>
-                                    <a href="book-details.php?reserve=<?php echo $bookId; ?>&csrf_token=<?php echo generateCsrfToken(); ?>" 
-                                       class="btn btn-warning"
-                                       data-confirm="Reserve this book? You will be notified when it becomes available.">
-                                        <i class="fas fa-clock"></i> Reserve
+                                <?php elseif (!$hasReservation): ?>
+                                    <a href="book-details.php?id=<?php echo $bookId; ?>&reserve=<?php echo $bookId; ?>&csrf_token=<?php echo generateCsrfToken(); ?>"
+                                       class="btn btn-success"
+                                       data-confirm="Request this book for pickup at the library?">
+                                        <i class="fas fa-hand-holding-heart"></i> Reserve for Pickup
                                     </a>
-                                <?php elseif ($hasReservation): ?>
+                                <?php else: ?>
                                     <span class="badge badge-info" style="font-size:14px;padding:8px 16px;">
-                                        <i class="fas fa-clock"></i> Reserved
+                                        <i class="fas fa-clock"></i> Pickup request active
                                     </span>
-                                    <a href="book-details.php?cancel_reservation=<?php echo $bookId; ?>&csrf_token=<?php echo generateCsrfToken(); ?>" 
+                                    <a href="book-details.php?id=<?php echo $bookId; ?>&cancel_reservation=<?php echo $bookId; ?>&csrf_token=<?php echo generateCsrfToken(); ?>"
                                        class="btn btn-danger btn-sm"
-                                       data-confirm="Cancel your reservation for this book?">
-                                        <i class="fas fa-times"></i> Cancel Reservation
+                                       data-confirm="Cancel your pickup request?">
+                                        <i class="fas fa-times"></i> Cancel Request
                                     </a>
                                 <?php endif; ?>
                             </div>

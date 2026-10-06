@@ -150,8 +150,8 @@ include_once '../../includes/sidebar.php';
             <a href="create.php" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add Book
             </a>
-            <a href="copies.php" class="btn btn-info">
-                <i class="fas fa-copy"></i> Manage Copies
+            <a href="#books-table" class="btn btn-info">
+                <i class="fas fa-copy"></i> Select Book
             </a>
         </div>
     </div>
@@ -209,7 +209,7 @@ include_once '../../includes/sidebar.php';
     </div>
 
     <!-- Books Table -->
-    <div class="card">
+    <div class="card" id="books-table">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table">

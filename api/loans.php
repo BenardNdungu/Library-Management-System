@@ -1,6 +1,6 @@
 <?php
 /**
- * Loans API
+ * lend API
  * Library Management System
  */
 
@@ -21,7 +21,7 @@ $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
 try {
     switch ($action) {
         case 'list':
-            $response = getLoans($pdo, $limit);
+            $response = getlend($pdo, $limit);
             break;
         case 'detail':
             if (!$loanId) {
@@ -30,10 +30,10 @@ try {
             $response = getLoanDetail($pdo, $loanId);
             break;
         case 'current':
-            $response = getCurrentLoans($pdo, $limit);
+            $response = getCurrentlend($pdo, $limit);
             break;
         case 'overdue':
-            $response = getOverdueLoans($pdo, $limit);
+            $response = getOverduelend($pdo, $limit);
             break;
         default:
             throw new Exception('Invalid action');
@@ -45,14 +45,14 @@ try {
 }
 
 /**
- * Get loans list
+ * Get lend list
  */
-function getLoans($pdo, $limit): array {
+function getlend($pdo, $limit): array {
     $stmt = $pdo->prepare("
         SELECT l.id, l.status, l.issue_date, l.due_date,
                u.name as member_name, m.member_number,
                b.title as book_title, bc.accession_number
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -74,7 +74,7 @@ function getLoanDetail($pdo, $loanId): ?array {
                b.title as book_title, bc.accession_number,
                u2.name as issued_by_name,
                u3.name as returned_to_name
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -88,14 +88,14 @@ function getLoanDetail($pdo, $loanId): ?array {
 }
 
 /**
- * Get current loans (borrowed and overdue)
+ * Get current lend (borrowed and overdue)
  */
-function getCurrentLoans($pdo, $limit): array {
+function getCurrentlend($pdo, $limit): array {
     $stmt = $pdo->prepare("
         SELECT l.id, l.status, l.issue_date, l.due_date,
                u.name as member_name, m.member_number,
                b.title as book_title, bc.accession_number
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -109,15 +109,15 @@ function getCurrentLoans($pdo, $limit): array {
 }
 
 /**
- * Get overdue loans
+ * Get overdue lend
  */
-function getOverdueLoans($pdo, $limit): array {
+function getOverduelend($pdo, $limit): array {
     $stmt = $pdo->prepare("
         SELECT l.id, l.due_date,
                u.name as member_name, m.member_number,
                b.title as book_title, bc.accession_number,
                DATEDIFF(CURDATE(), l.due_date) as overdue_days
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id

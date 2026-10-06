@@ -42,7 +42,7 @@ $countSql = "
     FROM fines f
     JOIN members m ON f.member_id = m.id
     JOIN users u ON m.user_id = u.id
-    JOIN loans l ON f.loan_id = l.id
+    JOIN lend l ON f.loan_id = l.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause
@@ -63,7 +63,7 @@ $sql = "
     FROM fines f
     JOIN members m ON f.member_id = m.id
     JOIN users u ON m.user_id = u.id
-    JOIN loans l ON f.loan_id = l.id
+    JOIN lend l ON f.loan_id = l.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause

@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($formData['password'])) {
         $errors['password'] = 'Password is required';
-    } elseif (strlen($formData['password']) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
+    } elseif (strlen($formData['password']) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters';
     }
     
     if ($formData['password'] !== $formData['confirm_password']) {
@@ -212,6 +212,9 @@ function uploadProfileImage($file): array {
 }
 
 $pageTitle = 'Register';
+$settingsPdo = getDBConnection();
+$libraryName = getSetting($settingsPdo, 'library_name', APP_NAME);
+$logoFilename = getSetting($settingsPdo, 'logo', '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -230,7 +233,7 @@ $pageTitle = 'Register';
         
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: url('assets/images/image1.png') center center / cover no-repeat fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -256,6 +259,14 @@ $pageTitle = 'Register';
             font-size: 40px;
             color: #667eea;
             margin-bottom: 4px;
+        }
+
+        .header .logo-image {
+            display: block;
+            width: min(220px, 100%);
+            height: 88px;
+            margin: 0 auto 4px;
+            object-fit: contain;
         }
         
         .header h1 {
@@ -432,10 +443,14 @@ $pageTitle = 'Register';
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">
-                <i class="fas fa-user-plus"></i>
-            </div>
-            <h1>Create Account</h1>
+            <?php if ($logoFilename): ?>
+                <img class="logo-image" src="<?php echo htmlspecialchars(rtrim(APP_URL, '/') . '/uploads/' . $logoFilename, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($libraryName, ENT_QUOTES, 'UTF-8'); ?> logo">
+            <?php else: ?>
+                <div class="logo">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+            <?php endif; ?>
+            <h1><?php echo htmlspecialchars($libraryName, ENT_QUOTES, 'UTF-8'); ?></h1>
             <p>Join the library and start borrowing books</p>
         </div>
         
@@ -517,7 +532,7 @@ $pageTitle = 'Register';
                     <?php if (isset($errors['password'])): ?>
                         <div class="text-danger"><?php echo $errors['password']; ?></div>
                     <?php endif; ?>
-                    <div class="form-text">Minimum 6 characters</div>
+                    <div class="form-text">Minimum 8 characters</div>
                 </div>
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password <span class="text-danger">*</span></label>

@@ -65,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($formData['password'])) {
         $errors['password'] = 'Password is required';
-    } elseif (strlen($formData['password']) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
+    } elseif (strlen($formData['password']) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters';
     }
     
     // Handle profile image upload
@@ -246,7 +246,7 @@ include_once '../../includes/sidebar.php';
                             <?php if (isset($errors['password'])): ?>
                                 <div class="text-danger"><?php echo $errors['password']; ?></div>
                             <?php endif; ?>
-                            <div class="form-text">Minimum 6 characters</div>
+                            <div class="form-text">Minimum 8 characters</div>
                         </div>
                     </div>
                 </div>
@@ -275,7 +275,12 @@ include_once '../../includes/sidebar.php';
                         <div class="form-group">
                             <label for="date_of_birth">Date of Birth</label>
                             <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" 
-                                   value="<?php echo $formData['date_of_birth'] ?? ''; ?>">
+                                   value="<?php echo $formData['date_of_birth'] ?? ''; ?>"
+                                   max="<?php echo date('Y-m-d'); ?>">
+
+                                    <?php if (isset($errors['date_of_birth'])): ?>
+                                        <div class="text-danger"><?php echo $errors['date_of_birth']; ?></div>
+                                    <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-4">

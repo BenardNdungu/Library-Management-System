@@ -38,7 +38,7 @@ try {
 }
 
 /**
- * Search for loans to return
+ * Search for lend to return
  */
 function searchReturns($pdo, $barcode, $loanId): array {
     if ($loanId) {
@@ -47,7 +47,7 @@ function searchReturns($pdo, $barcode, $loanId): array {
             SELECT l.id, l.due_date, l.status,
                    m.member_number, u.name as member_name,
                    b.title as book_title, bc.accession_number, bc.barcode
-            FROM loans l
+            FROM lend l
             JOIN members m ON l.member_id = m.id
             JOIN users u ON m.user_id = u.id
             JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -71,7 +71,7 @@ function searchReturns($pdo, $barcode, $loanId): array {
             SELECT l.id, l.due_date, l.status,
                    m.member_number, u.name as member_name,
                    b.title as book_title, bc.accession_number, bc.barcode
-            FROM loans l
+            FROM lend l
             JOIN members m ON l.member_id = m.id
             JOIN users u ON m.user_id = u.id
             JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -112,7 +112,7 @@ function processReturn($pdo, $data): array {
         // Get loan details
         $stmt = $pdo->prepare("
             SELECT l.*, bc.book_id, b.title
-            FROM loans l
+            FROM lend l
             JOIN book_copies bc ON l.book_copy_id = bc.id
             JOIN books b ON bc.book_id = b.id
             WHERE l.id = ? AND l.status IN ('Borrowed', 'Overdue')
@@ -126,7 +126,7 @@ function processReturn($pdo, $data): array {
         
         // Update loan
         $stmt = $pdo->prepare("
-            UPDATE loans 
+            UPDATE lend 
             SET status = 'Returned', return_date = CURDATE(), returned_to = ?, notes = CONCAT(IFNULL(notes, ''), ' ', ?)
             WHERE id = ?
         ");
@@ -188,7 +188,7 @@ function processReturn($pdo, $data): array {
         createNotification($pdo, $memberRecord['user_id'], 'Book Returned', $message, 'success');
         
         // Audit log
-        createAuditLog($pdo, getCurrentUserId(), 'return_book', 'loans', $loanId, 'Returned book from loan ID: ' . $loanId);
+        createAuditLog($pdo, getCurrentUserId(), 'return_book', 'lend', $loanId, 'Returned book from loan ID: ' . $loanId);
         
         $pdo->commit();
         

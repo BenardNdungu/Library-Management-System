@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $stmt = $pdo->prepare("
                     INSERT INTO book_copies (
-                        book_id, accession_number, barcode, condition, status,
+                        book_id, accession_number, barcode, `condition`, status,
                         purchase_date, price, location
                     ) VALUES (?, ?, ?, ?, 'Available', ?, ?, ?)
                 ");

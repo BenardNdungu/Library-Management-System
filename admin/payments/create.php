@@ -28,7 +28,7 @@ if ($fineId) {
         FROM fines f
         JOIN members m ON f.member_id = m.id
         JOIN users u ON m.user_id = u.id
-        JOIN loans l ON f.loan_id = l.id
+        JOIN lend l ON f.loan_id = l.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         WHERE f.id = ? AND f.status = 'Unpaid'
@@ -59,7 +59,7 @@ if ($memberId) {
     $stmt = $pdo->prepare("
         SELECT f.*, b.title as book_title
         FROM fines f
-        JOIN loans l ON f.loan_id = l.id
+        JOIN lend l ON f.loan_id = l.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         WHERE f.member_id = ? AND f.status = 'Unpaid'

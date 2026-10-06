@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($formData['password'])) {
         $errors['password'] = 'Password is required';
-    } elseif (strlen($formData['password']) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
+    } elseif (strlen($formData['password']) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters';
     }
     
     if (empty($errors)) {
@@ -196,7 +196,7 @@ include_once '../../includes/sidebar.php';
                             <?php if (isset($errors['password'])): ?>
                                 <div class="text-danger"><?php echo $errors['password']; ?></div>
                             <?php endif; ?>
-                            <div class="form-text">Minimum 6 characters</div>
+                            <div class="form-text">Minimum 8 characters</div>
                         </div>
                     </div>
                     <div class="col-6">

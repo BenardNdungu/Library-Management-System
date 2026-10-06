@@ -57,6 +57,9 @@ if (isset($_GET['expired'])) {
 }
 
 $pageTitle = 'Login';
+$settingsPdo = getDBConnection();
+$libraryName = getSetting($settingsPdo, 'library_name', APP_NAME);
+$logoFilename = getSetting($settingsPdo, 'logo', '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,7 +78,7 @@ $pageTitle = 'Login';
         
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: url('assets/images/image1.png') center center / cover no-repeat fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -101,6 +104,14 @@ $pageTitle = 'Login';
             font-size: 48px;
             color: #667eea;
             margin-bottom: 8px;
+        }
+
+        .login-header .logo-image {
+            display: block;
+            width: min(220px, 100%);
+            height: 96px;
+            margin: 0 auto 8px;
+            object-fit: contain;
         }
         
         .login-header h1 {
@@ -274,10 +285,14 @@ $pageTitle = 'Login';
 <body>
     <div class="login-container">
         <div class="login-header">
-            <div class="logo">
-                <i class="fas fa-book-open"></i>
-            </div>
-            <h1><?php echo getSetting(getDBConnection(), 'library_name', APP_NAME); ?></h1>
+            <?php if ($logoFilename): ?>
+                <img class="logo-image" src="<?php echo htmlspecialchars(rtrim(APP_URL, '/') . '/uploads/' . $logoFilename, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($libraryName, ENT_QUOTES, 'UTF-8'); ?> logo">
+            <?php else: ?>
+                <div class="logo">
+                    <i class="fas fa-book-open"></i>
+                </div>
+            <?php endif; ?>
+            <h1><?php echo htmlspecialchars($libraryName, ENT_QUOTES, 'UTF-8'); ?></h1>
             <p>Sign in to access the library management system</p>
         </div>
         

@@ -55,11 +55,11 @@ switch ($reportType) {
         $reportTitle = 'New Members';
         $reportData = generateNewMembersReport($pdo, $startDate, $endDate);
         break;
-    case 'loans_current':
-        $reportTitle = 'Current Loans';
-        $reportData = generateCurrentLoansReport($pdo);
+    case 'lend_current':
+        $reportTitle = 'Current lend';
+        $reportData = generateCurrentlendReport($pdo);
         break;
-    case 'loans_history':
+    case 'lend_history':
         $reportTitle = 'Loan History';
         $reportData = generateLoanHistoryReport($pdo, $startDate, $endDate);
         break;
@@ -170,7 +170,7 @@ function generateBorrowedBooksReport($pdo): array {
     $stmt = $pdo->query("
         SELECT b.title, b.isbn, u.name as member_name, m.member_number,
                l.issue_date, l.due_date, l.status
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -188,7 +188,7 @@ function generateMembersReport($pdo): array {
     $stmt = $pdo->query("
         SELECT m.member_number, u.name, u.email, u.phone, m.membership_type,
                m.status, m.registration_date,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans,
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend,
                (SELECT COALESCE(SUM(amount), 0) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines
         FROM members m
         JOIN users u ON m.user_id = u.id
@@ -204,7 +204,7 @@ function generateActiveMembersReport($pdo): array {
     $stmt = $pdo->query("
         SELECT m.member_number, u.name, u.email, u.phone, m.membership_type,
                m.registration_date,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend
         FROM members m
         JOIN users u ON m.user_id = u.id
         WHERE m.status = 'active'
@@ -230,14 +230,14 @@ function generateNewMembersReport($pdo, $startDate, $endDate): array {
 }
 
 /**
- * Generate Current Loans Report
+ * Generate Current lend Report
  */
-function generateCurrentLoansReport($pdo): array {
+function generateCurrentlendReport($pdo): array {
     $stmt = $pdo->query("
         SELECT b.title, u.name as member_name, m.member_number,
                l.issue_date, l.due_date, l.status,
                CASE WHEN l.status = 'Overdue' THEN DATEDIFF(CURDATE(), l.due_date) ELSE 0 END as overdue_days
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -255,7 +255,7 @@ function generateLoanHistoryReport($pdo, $startDate, $endDate): array {
     $stmt = $pdo->prepare("
         SELECT b.title, u.name as member_name, m.member_number,
                l.issue_date, l.due_date, l.return_date, l.status
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -275,7 +275,7 @@ function generateOverdueBooksReport($pdo): array {
         SELECT b.title, u.name as member_name, m.member_number,
                l.due_date, DATEDIFF(CURDATE(), l.due_date) as overdue_days,
                COALESCE(f.amount, 0) as fine_amount
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -294,7 +294,7 @@ function generateMostBorrowedReport($pdo, $startDate, $endDate): array {
     $stmt = $pdo->prepare("
         SELECT b.title, COUNT(l.id) as borrow_count,
                b.isbn, a.name as author
-        FROM loans l
+        FROM lend l
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         LEFT JOIN authors a ON b.author_id = a.id
@@ -318,7 +318,7 @@ function generateOutstandingFinesReport($pdo): array {
         FROM fines f
         JOIN members m ON f.member_id = m.id
         JOIN users u ON m.user_id = u.id
-        JOIN loans l ON f.loan_id = l.id
+        JOIN lend l ON f.loan_id = l.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         WHERE f.status = 'Unpaid'
@@ -417,8 +417,8 @@ $reportTypes = [
     'members' => 'All Members',
     'members_active' => 'Active Members',
     'members_new' => 'New Members',
-    'loans_current' => 'Current Loans',
-    'loans_history' => 'Loan History',
+    'lend_current' => 'Current lend',
+    'lend_history' => 'Loan History',
     'overdue_books' => 'Overdue Books',
     'most_borrowed' => 'Most Borrowed Books',
     'fines_outstanding' => 'Outstanding Fines',
@@ -489,7 +489,7 @@ include_once '../../includes/sidebar.php';
             <h5><?php echo $reportTitle; ?></h5>
             <span class="text-muted">
                 <?php echo count($reportData); ?> records
-                <?php if ($reportType === 'members_new' || $reportType === 'loans_history' || $reportType === 'most_borrowed' || $reportType === 'fines_paid' || $reportType === 'fines_collection'): ?>
+                <?php if ($reportType === 'members_new' || $reportType === 'lend_history' || $reportType === 'most_borrowed' || $reportType === 'fines_paid' || $reportType === 'fines_collection'): ?>
                     | <?php echo formatDate($startDate); ?> to <?php echo formatDate($endDate); ?>
                 <?php endif; ?>
             </span>

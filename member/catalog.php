@@ -13,6 +13,11 @@ requireMember();
 $pdo = getDBConnection();
 $pageTitle = 'Library Catalog';
 
+$stmt = $pdo->prepare('SELECT id FROM members WHERE user_id = ?');
+$stmt->execute([getCurrentUserId()]);
+$member = $stmt->fetch();
+$memberId = (int) ($member['id'] ?? 0);
+
 // Get filter parameters
 $search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
 $category = isset($_GET['category']) ? (int) $_GET['category'] : 0;
@@ -62,7 +67,8 @@ $sql = "
            c.name as category_name,
            a.name as author_name,
            p.name as publisher_name,
-           (SELECT COUNT(*) FROM reservations WHERE book_id = b.id AND member_id = ? AND status IN ('Pending', 'Ready')) as has_reservation
+           (SELECT COUNT(*) FROM reservations WHERE book_id = b.id AND member_id = ? AND status IN ('Pending', 'Ready') AND expiry_date >= CURDATE()) as has_reservation,
+           (SELECT COUNT(*) FROM lend l JOIN book_copies bc ON l.book_copy_id = bc.id WHERE l.member_id = ? AND bc.book_id = b.id AND l.status IN ('Borrowed', 'Overdue')) as has_loan
     FROM books b
     LEFT JOIN categories c ON b.category_id = c.id
     LEFT JOIN authors a ON b.author_id = a.id
@@ -71,7 +77,7 @@ $sql = "
     ORDER BY b.title ASC
     LIMIT ? OFFSET ?
 ";
-$paramsWithMember = array_merge([getCurrentUserId()], $params, [$limit, $offset]);
+$paramsWithMember = array_merge([$memberId, $memberId], $params, [$limit, $offset]);
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($paramsWithMember);
@@ -104,35 +110,8 @@ if (isset($_GET['reserve']) && isset($_GET['csrf_token'])) {
         $memberId = $member['id'] ?? 0;
     }
     
-    // Check if already reserved
-    $stmt = $pdo->prepare("SELECT id FROM reservations WHERE member_id = ? AND book_id = ? AND status IN ('Pending', 'Ready')");
-    $stmt->execute([$memberId, $bookId]);
-    if ($stmt->fetch()) {
-        $_SESSION['error'] = 'You already have an active reservation for this book.';
-    } else {
-        // Check if book is available
-        $stmt = $pdo->prepare("SELECT available_copies FROM books WHERE id = ?");
-        $stmt->execute([$bookId]);
-        $book = $stmt->fetch();
-        
-        if ($book && $book['available_copies'] > 0) {
-            // Can borrow directly instead of reserve
-            $_SESSION['info'] = 'This book is available. Please visit the library to borrow it.';
-        } else {
-            // Create reservation
-            $reservationPeriod = getSetting($pdo, 'reservation_period', DEFAULT_RESERVATION_PERIOD);
-            $expiryDate = date('Y-m-d', strtotime('+' . $reservationPeriod . ' days'));
-            
-            $stmt = $pdo->prepare("
-                INSERT INTO reservations (member_id, book_id, reservation_date, expiry_date, status)
-                VALUES (?, ?, CURDATE(), ?, 'Pending')
-            ");
-            $stmt->execute([$memberId, $bookId, $expiryDate]);
-            
-            createAuditLog($pdo, getCurrentUserId(), 'create_reservation', 'reservations', $pdo->lastInsertId(), 'Member reserved book');
-            $_SESSION['success'] = 'Book reserved successfully. You will be notified when it becomes available.';
-        }
-    }
+    $result = createPickupReservation($pdo, $memberId, $bookId);
+    $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
     redirect('catalog.php');
 }
 
@@ -259,18 +238,16 @@ include_once '../includes/sidebar.php';
                                         <a href="book-details.php?id=<?php echo $book['id']; ?>" class="btn btn-sm btn-info">
                                             <i class="fas fa-eye"></i> Details
                                         </a>
-                                        <?php if ($book['available_copies'] > 0): ?>
-                                            <a href="../loans/create.php?book_id=<?php echo $book['id']; ?>" class="btn btn-sm btn-success">
-                                                <i class="fas fa-hand-holding-heart"></i> Borrow
-                                            </a>
-                                        <?php elseif (!$book['has_reservation']): ?>
-                                            <a href="catalog.php?reserve=<?php echo $book['id']; ?>&csrf_token=<?php echo generateCsrfToken(); ?>" 
-                                               class="btn btn-sm btn-warning"
-                                               data-confirm="Reserve this book? You will be notified when it becomes available.">
-                                                <i class="fas fa-clock"></i> Reserve
-                                            </a>
+                                        <?php if ($book['has_loan']): ?>
+                                            <span class="badge badge-info">Already borrowed</span>
+                                        <?php elseif ($book['has_reservation']): ?>
+                                            <span class="badge badge-info">Pickup request active</span>
                                         <?php else: ?>
-                                            <span class="badge badge-info">Already Reserved</span>
+                                            <a href="catalog.php?reserve=<?php echo $book['id']; ?>&csrf_token=<?php echo generateCsrfToken(); ?>"
+                                               class="btn btn-sm btn-success"
+                                               data-confirm="Request this book for pickup at the library?">
+                                                <i class="fas fa-hand-holding-heart"></i> Reserve for Pickup
+                                            </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>

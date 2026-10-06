@@ -80,10 +80,52 @@ if (isset($_GET['update_status']) && isset($_GET['csrf_token'])) {
     $reservationId = (int) $_GET['update_status'];
     $newStatus = sanitizeInput($_GET['new_status'] ?? '');
     
-    if (in_array($newStatus, ['Pending', 'Ready', 'Completed', 'Cancelled', 'Expired'])) {
+    if (in_array($newStatus, ['Pending', 'Ready', 'Cancelled', 'Expired'])) {
         try {
-            $stmt = $pdo->prepare("UPDATE reservations SET status = ? WHERE id = ?");
-            $stmt->execute([$newStatus, $reservationId]);
+            $pendingReservation = null;
+            if ($newStatus === 'Ready') {
+                $stmt = $pdo->prepare("SELECT book_id FROM reservations WHERE id = ? AND status = 'Pending' AND expiry_date >= CURDATE()");
+                $stmt->execute([$reservationId]);
+                $pendingReservation = $stmt->fetch();
+                if (!$pendingReservation) {
+                    throw new RuntimeException('This reservation is no longer pending.');
+                }
+            }
+
+            $pdo->beginTransaction();
+
+            if ($newStatus === 'Ready') {
+                $stmt = $pdo->prepare('SELECT id FROM books WHERE id = ? FOR UPDATE');
+                $stmt->execute([$pendingReservation['book_id']]);
+                $stmt->fetch();
+
+                $stmt = $pdo->prepare("SELECT id FROM reservations WHERE id = ? AND status = 'Pending' AND expiry_date >= CURDATE() FOR UPDATE");
+                $stmt->execute([$reservationId]);
+                if (!$stmt->fetch()) {
+                    throw new RuntimeException('This reservation is no longer pending.');
+                }
+
+                $stmt = $pdo->prepare("SELECT id FROM book_copies WHERE book_id = ? AND status = 'Available' FOR UPDATE");
+                $stmt->execute([$pendingReservation['book_id']]);
+                $availableCopies = count($stmt->fetchAll());
+
+                $stmt = $pdo->prepare("SELECT id FROM reservations WHERE book_id = ? AND status = 'Ready' AND expiry_date >= CURDATE() FOR UPDATE");
+                $stmt->execute([$pendingReservation['book_id']]);
+                $readyReservations = count($stmt->fetchAll());
+
+                if ($availableCopies <= $readyReservations) {
+                    throw new RuntimeException('No unreserved copies are currently available.');
+                }
+
+                $stmt = $pdo->prepare("UPDATE reservations SET status = 'Ready' WHERE id = ? AND status = 'Pending' AND expiry_date >= CURDATE()");
+                $stmt->execute([$reservationId]);
+                if ($stmt->rowCount() !== 1) {
+                    throw new RuntimeException('This reservation could not be marked ready.');
+                }
+            } else {
+                $stmt = $pdo->prepare('UPDATE reservations SET status = ? WHERE id = ?');
+                $stmt->execute([$newStatus, $reservationId]);
+            }
             
             // If status is 'Ready', notify member
             if ($newStatus === 'Ready') {
@@ -108,9 +150,13 @@ if (isset($_GET['update_status']) && isset($_GET['csrf_token'])) {
             }
             
             createAuditLog($pdo, getCurrentUserId(), 'update_reservation', 'reservations', $reservationId, 'Updated reservation status to: ' . $newStatus);
+            $pdo->commit();
             $_SESSION['success'] = 'Reservation status updated successfully.';
-        } catch (PDOException $e) {
-            $_SESSION['error'] = 'Database error: ' . $e->getMessage();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $_SESSION['error'] = $e instanceof PDOException ? 'Database error: ' . $e->getMessage() : $e->getMessage();
         }
     }
     redirect('index.php');
@@ -135,7 +181,7 @@ include_once '../../includes/sidebar.php';
             </div>
         </div>
         <div class="page-actions">
-            <a href="../loans/create.php" class="btn btn-primary">
+            <a href="../lend/create.php" class="btn btn-primary">
                 <i class="fas fa-plus-circle"></i> Issue Book
             </a>
         </div>
@@ -277,10 +323,9 @@ include_once '../../includes/sidebar.php';
                                                     <i class="fas fa-times"></i> Cancel
                                                 </a>
                                             <?php elseif ($reservation['status'] === 'Ready'): ?>
-                                                <a href="index.php?update_status=<?php echo $reservation['id']; ?>&new_status=Completed&csrf_token=<?php echo generateCsrfToken(); ?>" 
-                                                   class="btn btn-sm btn-info"
-                                                   data-confirm="Mark this reservation as completed?">
-                                                    <i class="fas fa-check-double"></i> Complete
+                                                <a href="../lend/create.php?member_id=<?php echo $reservation['member_id']; ?>&book_id=<?php echo $reservation['book_id']; ?>&reservation_id=<?php echo $reservation['id']; ?>"
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-hand-holding-heart"></i> Issue at Pickup
                                                 </a>
                                             <?php endif; ?>
                                         </div>

@@ -263,8 +263,8 @@ function changePassword(PDO $pdo, int $userId, string $currentPassword, string $
     }
     
     // Validate new password strength
-    if (strlen($newPassword) < 6) {
-        return ['success' => false, 'message' => 'New password must be at least 6 characters'];
+    if (strlen($newPassword) < 8) {
+        return ['success' => false, 'message' => 'New password must be at least 8 characters'];
     }
     
     // Hash new password
@@ -288,7 +288,7 @@ function changePassword(PDO $pdo, int $userId, string $currentPassword, string $
  * @return array [success => bool, message => string, newPassword => string|null]
  */
 function resetUserPassword(PDO $pdo, int $userId, int $adminId): array {
-    $newPassword = generateToken(6);
+    $newPassword = generateToken(8);
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
     
     $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");

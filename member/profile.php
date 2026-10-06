@@ -324,11 +324,11 @@ include_once '../includes/sidebar.php';
                 </div>
                 <div class="card-body">
                     <?php
-                    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
+                    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
                     $stmt->execute([$member['id']]);
                     $current = $stmt->fetch()['count'];
                     
-                    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status = 'Returned'");
+                    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status = 'Returned'");
                     $stmt->execute([$member['id']]);
                     $total = $stmt->fetch()['count'];
                     
@@ -336,7 +336,7 @@ include_once '../includes/sidebar.php';
                     $stmt->execute([$member['id']]);
                     $fines = $stmt->fetch()['total'];
                     ?>
-                    <p><strong>Current Loans:</strong> <?php echo $current; ?></p>
+                    <p><strong>Current lend:</strong> <?php echo $current; ?></p>
                     <p><strong>Total Books Read:</strong> <?php echo $total; ?></p>
                     <p><strong>Outstanding Fines:</strong> <?php echo formatCurrency($fines); ?></p>
                 </div>

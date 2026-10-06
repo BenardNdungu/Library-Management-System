@@ -16,7 +16,7 @@
 <script src="<?php echo APP_URL; ?>/assets/js/dashboard.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/books.js"></script>
 <script src="<?php echo APP_URL; ?>/assets/js/members.js"></script>
-<script src="<?php echo APP_URL; ?>/assets/js/loans.js"></script>
+<script src="<?php echo APP_URL; ?>/assets/js/lend.js"></script>
 
 <!-- Page specific scripts -->
 <?php if (isset($pageScripts)): ?>

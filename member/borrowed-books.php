@@ -39,20 +39,20 @@ $whereClause = "WHERE " . implode(" AND ", $where);
 // Get total count
 $countSql = "
     SELECT COUNT(*) as total 
-    FROM loans l
+    FROM lend l
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause
 ";
 $stmt = $pdo->prepare($countSql);
 $stmt->execute($params);
-$totalLoans = $stmt->fetch()['total'];
-$totalPages = ceil($totalLoans / $limit);
+$totallend = $stmt->fetch()['total'];
+$totalPages = ceil($totallend / $limit);
 
-// Get loans
+// Get lend
 $sql = "
     SELECT l.*, b.title as book_title, b.isbn, bc.accession_number, bc.barcode
-    FROM loans l
+    FROM lend l
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause
@@ -64,7 +64,7 @@ $params[] = $offset;
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$loans = $stmt->fetchAll();
+$lend = $stmt->fetchAll();
 
 // Get status counts
 $statusCounts = [
@@ -73,7 +73,7 @@ $statusCounts = [
     'Returned' => 0,
     'Lost' => 0
 ];
-$stmt = $pdo->prepare("SELECT status, COUNT(*) as count FROM loans WHERE member_id = ? GROUP BY status");
+$stmt = $pdo->prepare("SELECT status, COUNT(*) as count FROM lend WHERE member_id = ? GROUP BY status");
 $stmt->execute([$memberId]);
 while ($row = $stmt->fetch()) {
     $statusCounts[$row['status']] = $row['count'];
@@ -170,7 +170,7 @@ include_once '../includes/sidebar.php';
         </div>
     </div>
 
-    <!-- Loans Table -->
+    <!-- lend Table -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -186,12 +186,12 @@ include_once '../includes/sidebar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($loans)): ?>
+                        <?php if (empty($lend)): ?>
                             <tr>
-                                <td colspan="6" class="text-center text-muted">No loans found</td>
+                                <td colspan="6" class="text-center text-muted">No lend found</td>
                             </tr>
                         <?php else: ?>
-                            <?php foreach ($loans as $loan): ?>
+                            <?php foreach ($lend as $loan): ?>
                                 <tr>
                                     <td>
                                         <div>

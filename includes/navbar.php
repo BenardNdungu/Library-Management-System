@@ -24,7 +24,7 @@ $unreadNotifications = isset($pdo) ? getUnreadNotificationsCount($pdo, $_SESSION
     <div class="navbar-right">
         <!-- Search -->
         <div class="navbar-search">
-            <form action="<?php echo APP_URL; ?>/search.php" method="GET" id="navbarSearchForm">
+            <form action="<?php echo rtrim(APP_URL, '/'); ?>/api/search.php" method="GET" id="navbarSearchForm">
                 <div class="search-wrapper">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" name="q" placeholder="Search books, members..." class="search-input" id="navbarSearch">

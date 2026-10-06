@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($newPassword)) {
         $errors['new_password'] = 'New password is required';
-    } elseif (strlen($newPassword) < 6) {
-        $errors['new_password'] = 'New password must be at least 6 characters';
+    } elseif (strlen($newPassword) < 8) {
+        $errors['new_password'] = 'New password must be at least 8 characters';
     }
     
     if ($newPassword !== $confirmPassword) {
@@ -95,7 +95,7 @@ include_once 'includes/sidebar.php';
                             <?php if (isset($errors['new_password'])): ?>
                                 <div class="text-danger"><?php echo $errors['new_password']; ?></div>
                             <?php endif; ?>
-                            <div class="form-text">Minimum 6 characters</div>
+                            <div class="form-text">Minimum 8 characters</div>
                         </div>
                         
                         <div class="form-group">
@@ -124,7 +124,7 @@ include_once 'includes/sidebar.php';
                 </div>
                 <div class="card-body">
                     <ul>
-                        <li>Password must be at least 6 characters long</li>
+                        <li>Password must be at least 8 characters long</li>
                         <li>Use a combination of letters, numbers, and special characters</li>
                         <li>Avoid using common words or personal information</li>
                         <li>Change your password regularly for better security</li>

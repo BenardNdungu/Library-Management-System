@@ -22,8 +22,8 @@ if (!$userId) {
 // Get user details
 $stmt = $pdo->prepare("
     SELECT u.*, 
-           (SELECT COUNT(*) FROM loans WHERE issued_by = u.id) as loans_issued,
-           (SELECT COUNT(*) FROM loans WHERE returned_to = u.id) as loans_returned
+           (SELECT COUNT(*) FROM lend WHERE issued_by = u.id) as lend_issued,
+           (SELECT COUNT(*) FROM lend WHERE returned_to = u.id) as lend_returned
     FROM users u
     WHERE u.id = ?
 ");
@@ -146,8 +146,8 @@ include_once '../../includes/sidebar.php';
                     <i class="fas fa-hand-holding-heart"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Loans Issued</div>
-                    <div class="stat-value"><?php echo $user['loans_issued']; ?></div>
+                    <div class="stat-label">lend Issued</div>
+                    <div class="stat-value"><?php echo $user['lend_issued']; ?></div>
                 </div>
             </div>
         </div>
@@ -157,8 +157,8 @@ include_once '../../includes/sidebar.php';
                     <i class="fas fa-undo-alt"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Loans Returned</div>
-                    <div class="stat-value"><?php echo $user['loans_returned']; ?></div>
+                    <div class="stat-label">lend Returned</div>
+                    <div class="stat-value"><?php echo $user['lend_returned']; ?></div>
                 </div>
             </div>
         </div>

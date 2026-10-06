@@ -30,8 +30,8 @@ try {
         case 'members':
             $response = searchMembers($pdo, $query, $limit);
             break;
-        case 'loans':
-            $response = searchLoans($pdo, $query, $limit);
+        case 'lend':
+            $response = searchlend($pdo, $query, $limit);
             break;
         case 'all':
             $response = searchAll($pdo, $query, $limit);
@@ -80,15 +80,15 @@ function searchMembers($pdo, $query, $limit): array {
 }
 
 /**
- * Search loans
+ * Search lend
  */
-function searchLoans($pdo, $query, $limit): array {
+function searchlend($pdo, $query, $limit): array {
     $stmt = $pdo->prepare("
         SELECT l.id, l.status, l.due_date,
                u.name as member_name, m.member_number,
                b.title as book_title,
                bc.accession_number
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -108,6 +108,6 @@ function searchAll($pdo, $query, $limit): array {
     return [
         'books' => searchBooks($pdo, $query, $limit),
         'members' => searchMembers($pdo, $query, $limit),
-        'loans' => searchLoans($pdo, $query, $limit)
+        'lend' => searchlend($pdo, $query, $limit)
     ];
 }

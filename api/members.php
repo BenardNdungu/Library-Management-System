@@ -36,11 +36,11 @@ try {
             }
             $response = searchMembers($pdo, $query, $limit);
             break;
-        case 'loans':
+        case 'lend':
             if (!$memberId) {
                 throw new Exception('Member ID required');
             }
-            $response = getMemberLoans($pdo, $memberId);
+            $response = getMemberlend($pdo, $memberId);
             break;
         case 'fines':
             if (!$memberId) {
@@ -64,7 +64,7 @@ function getMembers($pdo, $limit): array {
     $stmt = $pdo->prepare("
         SELECT m.id, m.member_number, u.name, u.email, u.phone,
                m.membership_type, m.status,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend
         FROM members m
         JOIN users u ON m.user_id = u.id
         ORDER BY m.created_at DESC
@@ -80,8 +80,8 @@ function getMembers($pdo, $limit): array {
 function getMemberDetail($pdo, $memberId): ?array {
     $stmt = $pdo->prepare("
         SELECT m.*, u.name, u.email, u.phone, u.username, u.profile_image,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status = 'Returned') as total_loans,
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend,
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status = 'Returned') as total_lend,
                (SELECT COALESCE(SUM(amount), 0) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines
         FROM members m
         JOIN users u ON m.user_id = u.id
@@ -108,12 +108,12 @@ function searchMembers($pdo, $query, $limit): array {
 }
 
 /**
- * Get member loans
+ * Get member lend
  */
-function getMemberLoans($pdo, $memberId): array {
+function getMemberlend($pdo, $memberId): array {
     $stmt = $pdo->prepare("
         SELECT l.*, b.title as book_title, bc.accession_number
-        FROM loans l
+        FROM lend l
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         WHERE l.member_id = ?
@@ -130,7 +130,7 @@ function getMemberFines($pdo, $memberId): array {
     $stmt = $pdo->prepare("
         SELECT f.*, b.title as book_title
         FROM fines f
-        JOIN loans l ON f.loan_id = l.id
+        JOIN lend l ON f.loan_id = l.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
         WHERE f.member_id = ?

@@ -77,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle password change
     $newPassword = $_POST['new_password'] ?? '';
     if (!empty($newPassword)) {
-        if (strlen($newPassword) < 6) {
-            $errors['new_password'] = 'Password must be at least 6 characters';
+        if (strlen($newPassword) < 8) {
+            $errors['new_password'] = 'Password must be at least 8 characters';
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         }
@@ -247,11 +247,11 @@ include_once '../../includes/sidebar.php';
                 <div class="form-group">
                     <label for="new_password">New Password (leave blank to keep current)</label>
                     <input type="password" id="new_password" name="new_password" class="form-control <?php echo isset($errors['new_password']) ? 'is-invalid' : ''; ?>" 
-                           placeholder="Enter new password">
+                           placeholder="Enter new password" minlength="8">
                     <?php if (isset($errors['new_password'])): ?>
                         <div class="text-danger"><?php echo $errors['new_password']; ?></div>
                     <?php endif; ?>
-                    <div class="form-text">Minimum 6 characters</div>
+                    <div class="form-text">Minimum 8 characters</div>
                 </div>
 
                 <div class="form-group mt-3">

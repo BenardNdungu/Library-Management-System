@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO book_copies (book_id, accession_number, barcode, condition, status, purchase_date, price, location)
+            INSERT INTO book_copies (book_id, accession_number, barcode, `condition`, status, purchase_date, price, location)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([$bookId, $accessionNumber, $barcode, $condition, $status, $purchaseDate ?: null, $price ?: null, $location ?: null]);
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
         $stmt = $pdo->prepare("
             UPDATE book_copies SET 
-                barcode = ?, condition = ?, status = ?,
+                barcode = ?, `condition` = ?, status = ?,
                 purchase_date = ?, price = ?, location = ?
             WHERE id = ? AND book_id = ?
         ");

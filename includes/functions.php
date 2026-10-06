@@ -157,7 +157,7 @@ function formatDate(string $date, string $format = 'Y-m-d'): string {
  * @param string $currency
  * @return string
  */
-function formatCurrency(float $amount, string $currency = '$'): string {
+function formatCurrency(float $amount, string $currency = 'Ksh '): string {
     return $currency . number_format($amount, 2);
 }
 
@@ -332,6 +332,92 @@ function createNotification(PDO $pdo, int $userId, string $title, string $messag
 }
 
 /**
+ * Create a reservation for library pickup.
+ * @param PDO $pdo
+ * @param int $memberId
+ * @param int $bookId
+ * @return array [success => bool, status => string|null, message => string]
+ */
+function createPickupReservation(PDO $pdo, int $memberId, int $bookId): array {
+    $eligibility = canMemberBorrow($pdo, $memberId);
+    if (!$eligibility['canBorrow']) {
+        return ['success' => false, 'status' => null, 'message' => $eligibility['message']];
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare('SELECT id FROM books WHERE id = ? FOR UPDATE');
+        $stmt->execute([$bookId]);
+        if (!$stmt->fetch()) {
+            $pdo->rollBack();
+            return ['success' => false, 'status' => null, 'message' => 'Book not found.'];
+        }
+
+        $stmt = $pdo->prepare("SELECT id FROM reservations WHERE member_id = ? AND book_id = ? AND status IN ('Pending', 'Ready') AND expiry_date >= CURDATE() LIMIT 1");
+        $stmt->execute([$memberId, $bookId]);
+        if ($stmt->fetch()) {
+            $pdo->rollBack();
+            return ['success' => false, 'status' => null, 'message' => 'You already have an active pickup request for this book.'];
+        }
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM lend l JOIN book_copies bc ON l.book_copy_id = bc.id WHERE l.member_id = ? AND bc.book_id = ? AND l.status IN ('Borrowed', 'Overdue')");
+        $stmt->execute([$memberId, $bookId]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            $pdo->rollBack();
+            return ['success' => false, 'status' => null, 'message' => 'You already have this book checked out.'];
+        }
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM book_copies WHERE book_id = ? AND status = 'Available'");
+        $stmt->execute([$bookId]);
+        $availableCopies = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status = 'Ready' AND expiry_date >= CURDATE()");
+        $stmt->execute([$bookId]);
+        $readyReservations = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status = 'Pending' AND expiry_date >= CURDATE()");
+        $stmt->execute([$bookId]);
+        $pendingReservations = (int) $stmt->fetchColumn();
+
+        $status = $availableCopies > $readyReservations && $pendingReservations === 0 ? 'Ready' : 'Pending';
+        $expiryDate = date('Y-m-d', strtotime('+' . getSetting($pdo, 'reservation_period', DEFAULT_RESERVATION_PERIOD) . ' days'));
+
+        $stmt = $pdo->prepare("INSERT INTO reservations (member_id, book_id, reservation_date, expiry_date, status) VALUES (?, ?, CURDATE(), ?, ?)");
+        $stmt->execute([$memberId, $bookId, $expiryDate, $status]);
+        $reservationId = (int) $pdo->lastInsertId();
+
+        if ($status === 'Ready') {
+            $stmt = $pdo->prepare('SELECT user_id FROM members WHERE id = ?');
+            $stmt->execute([$memberId]);
+            $userId = (int) $stmt->fetchColumn();
+            $book = getBookDetails($pdo, $bookId);
+            createNotification(
+                $pdo,
+                $userId,
+                'Reservation Ready',
+                'Your reservation for "' . $book['title'] . '" is ready for pickup at the library until ' . formatDate($expiryDate) . '.',
+                'success'
+            );
+        }
+
+        createAuditLog($pdo, getCurrentUserId(), 'create_reservation', 'reservations', $reservationId, 'Created pickup request for book ID: ' . $bookId);
+        $pdo->commit();
+
+        $message = $status === 'Ready'
+            ? 'Your book is ready for pickup at the library.'
+            : 'Your pickup request is in the queue. We will notify you when the book is ready.';
+        return ['success' => true, 'status' => $status, 'message' => $message];
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('Pickup reservation error: ' . $e->getMessage());
+        return ['success' => false, 'status' => null, 'message' => 'Could not create the pickup request. Please try again.'];
+    }
+}
+
+/**
  * Check if member can borrow
  * @param PDO $pdo
  * @param int $memberId
@@ -355,16 +441,16 @@ function canMemberBorrow(PDO $pdo, int $memberId): array {
         return ['canBorrow' => false, 'message' => 'User account is not active'];
     }
     
-    // Check current loans
-    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
+    // Check current lend
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
     $stmt->execute([$memberId]);
     $result = $stmt->fetch();
-    $currentLoans = $result['count'];
+    $currentlend = $result['count'];
     
     // Get max books per member
     $maxBooks = getSetting($pdo, 'max_books_per_member', DEFAULT_MAX_BOOKS);
     
-    if ($currentLoans >= $maxBooks) {
+    if ($currentlend >= $maxBooks) {
         return ['canBorrow' => false, 'message' => 'Member has reached the borrowing limit of ' . $maxBooks . ' books'];
     }
     
@@ -380,13 +466,13 @@ function canMemberBorrow(PDO $pdo, int $memberId): array {
 }
 
 /**
- * Get member current loans count
+ * Get member current lend count
  * @param PDO $pdo
  * @param int $memberId
  * @return int
  */
-function getMemberCurrentLoans(PDO $pdo, int $memberId): int {
-    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
+function getMemberCurrentlend(PDO $pdo, int $memberId): int {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
     $stmt->execute([$memberId]);
     $result = $stmt->fetch();
     return (int) $result['count'];
@@ -451,8 +537,8 @@ function getBookDetails(PDO $pdo, int $bookId): ?array {
 function getMemberDetails(PDO $pdo, int $memberId): ?array {
     $stmt = $pdo->prepare("
         SELECT m.*, u.name, u.email, u.phone, u.username, u.profile_image, u.status as user_status,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans,
-               (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status = 'Returned') as total_loans,
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend,
+               (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status = 'Returned') as total_lend,
                (SELECT COUNT(*) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines_count,
                (SELECT COALESCE(SUM(amount), 0) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines_amount
         FROM members m

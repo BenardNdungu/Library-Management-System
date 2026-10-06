@@ -28,11 +28,11 @@ try {
     $stats['available_copies'] = (int) $stmt->fetch()['count'];
     
     // Borrowed books
-    $stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status IN ('Borrowed', 'Overdue')");
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status IN ('Borrowed', 'Overdue')");
     $stats['borrowed_books'] = (int) $stmt->fetch()['count'];
     
     // Overdue books
-    $stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status = 'Overdue'");
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status = 'Overdue'");
     $stats['overdue_books'] = (int) $stmt->fetch()['count'];
     
     // Total members

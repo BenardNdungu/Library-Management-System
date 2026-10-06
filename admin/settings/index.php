@@ -68,10 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             createAuditLog($pdo, getCurrentUserId(), 'update_settings', 'settings', null, 'Updated system settings');
             $success = 'Settings updated successfully.';
             
-            // Refresh constants
-            foreach ($settings as $key => $value) {
-                define('SETTING_' . strtoupper($key), $value);
-            }
         } catch (PDOException $e) {
             $pdo->rollBack();
             $errors['general'] = 'Database error: ' . $e->getMessage();

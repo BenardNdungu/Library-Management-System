@@ -40,7 +40,7 @@ $whereClause = "WHERE " . implode(" AND ", $where);
 $countSql = "
     SELECT COUNT(*) as total 
     FROM fines f
-    JOIN loans l ON f.loan_id = l.id
+    JOIN lend l ON f.loan_id = l.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause
@@ -55,7 +55,7 @@ $sql = "
     SELECT f.*, b.title as book_title, l.due_date,
            DATEDIFF(l.return_date, l.due_date) as overdue_days
     FROM fines f
-    JOIN loans l ON f.loan_id = l.id
+    JOIN lend l ON f.loan_id = l.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     $whereClause

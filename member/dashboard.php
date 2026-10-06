@@ -35,18 +35,18 @@ $memberId = $member['id'];
 // Get statistics
 $stats = [];
 
-// Current loans
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
+// Current lend
+$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status IN ('Borrowed', 'Overdue')");
 $stmt->execute([$memberId]);
-$stats['current_loans'] = $stmt->fetch()['count'];
+$stats['current_lend'] = $stmt->fetch()['count'];
 
-// Total loans
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status = 'Returned'");
+// Total lend
+$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status = 'Returned'");
 $stmt->execute([$memberId]);
-$stats['total_loans'] = $stmt->fetch()['count'];
+$stats['total_lend'] = $stmt->fetch()['count'];
 
 // Overdue books
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE member_id = ? AND status = 'Overdue'");
+$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE member_id = ? AND status = 'Overdue'");
 $stmt->execute([$memberId]);
 $stats['overdue_books'] = $stmt->fetch()['count'];
 
@@ -65,10 +65,10 @@ $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM notifications WHERE user_id
 $stmt->execute([$userId]);
 $stats['unread_notifications'] = $stmt->fetch()['count'];
 
-// Get current loans details
+// Get current lend details
 $stmt = $pdo->prepare("
     SELECT l.*, b.title as book_title, bc.accession_number
-    FROM loans l
+    FROM lend l
     JOIN book_copies bc ON l.book_copy_id = bc.id
     JOIN books b ON bc.book_id = b.id
     WHERE l.member_id = ? AND l.status IN ('Borrowed', 'Overdue')
@@ -76,7 +76,7 @@ $stmt = $pdo->prepare("
     LIMIT 5
 ");
 $stmt->execute([$memberId]);
-$currentLoans = $stmt->fetchAll();
+$currentlend = $stmt->fetchAll();
 
 // Get recent notifications
 $stmt = $pdo->prepare("
@@ -152,8 +152,8 @@ include_once '../includes/sidebar.php';
                     <i class="fas fa-hand-holding-heart"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Current Loans</div>
-                    <div class="stat-value"><?php echo $stats['current_loans']; ?></div>
+                    <div class="stat-label">Current lend</div>
+                    <div class="stat-value"><?php echo $stats['current_lend']; ?></div>
                 </div>
             </div>
         </div>
@@ -164,7 +164,7 @@ include_once '../includes/sidebar.php';
                 </div>
                 <div class="stat-info">
                     <div class="stat-label">Total Books Read</div>
-                    <div class="stat-value"><?php echo $stats['total_loans']; ?></div>
+                    <div class="stat-value"><?php echo $stats['total_lend']; ?></div>
                 </div>
             </div>
         </div>
@@ -214,17 +214,17 @@ include_once '../includes/sidebar.php';
         </div>
     </div>
 
-    <!-- Current Loans -->
+    <!-- Current lend -->
     <div class="row mt-3">
         <div class="col-6">
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="fas fa-hand-holding-heart"></i> Current Loans</h5>
+                    <h5><i class="fas fa-hand-holding-heart"></i> Current lend</h5>
                     <a href="borrowed-books.php" class="btn btn-sm btn-info">View All</a>
                 </div>
                 <div class="card-body">
-                    <?php if (empty($currentLoans)): ?>
-                        <p class="text-muted text-center">No current loans</p>
+                    <?php if (empty($currentlend)): ?>
+                        <p class="text-muted text-center">No current lend</p>
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table">
@@ -236,7 +236,7 @@ include_once '../includes/sidebar.php';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($currentLoans as $loan): ?>
+                                    <?php foreach ($currentlend as $loan): ?>
                                         <tr>
                                             <td><?php echo $loan['book_title']; ?></td>
                                             <td>

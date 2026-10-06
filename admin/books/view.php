@@ -66,7 +66,7 @@ $stmt = $pdo->prepare("
            u.name as member_name,
            u2.name as issued_by_name,
            u3.name as returned_to_name
-    FROM loans l
+    FROM lend l
     JOIN members m ON l.member_id = m.id
     JOIN users u ON m.user_id = u.id
     JOIN users u2 ON l.issued_by = u2.id

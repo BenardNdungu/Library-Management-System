@@ -109,8 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle password change
     $newPassword = $_POST['new_password'] ?? '';
     if (!empty($newPassword)) {
-        if (strlen($newPassword) < 6) {
-            $errors['new_password'] = 'Password must be at least 6 characters';
+        if (strlen($newPassword) < 8) {
+            $errors['new_password'] = 'Password must be at least 8 characters';
         } else {
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         }

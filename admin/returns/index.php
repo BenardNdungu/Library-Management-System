@@ -31,7 +31,7 @@ if ($loanId) {
                bc.accession_number,
                bc.barcode,
                u2.name as issued_by_name
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Get loan details
             $stmt = $pdo->prepare("
                 SELECT l.*, bc.book_id
-                FROM loans l
+                FROM lend l
                 JOIN book_copies bc ON l.book_copy_id = bc.id
                 WHERE l.id = ? AND l.status IN ('Borrowed', 'Overdue')
             ");
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Update loan
             $stmt = $pdo->prepare("
-                UPDATE loans 
+                UPDATE lend 
                 SET status = 'Returned', return_date = CURDATE(), returned_to = ? 
                 WHERE id = ?
             ");
@@ -146,12 +146,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             createNotification($pdo, $memberRecord['user_id'], 'Book Returned', $message, 'success');
             
             // Audit log
-            createAuditLog($pdo, getCurrentUserId(), 'return_book', 'loans', $loanId, 'Returned book from loan ID: ' . $loanId);
+            createAuditLog($pdo, getCurrentUserId(), 'return_book', 'lend', $loanId, 'Returned book from loan ID: ' . $loanId);
             
             $pdo->commit();
             
             $_SESSION['success'] = 'Book returned successfully.' . ($fineAmount > 0 ? ' Fine: ' . formatCurrency($fineAmount) : '');
-            redirect('../loans/index.php');
+            redirect('../lend/index.php');
             
         } catch (Exception $e) {
             $pdo->rollBack();
@@ -171,7 +171,7 @@ if (isset($_GET['search']) && $_GET['search']) {
                b.title as book_title,
                bc.accession_number,
                bc.barcode
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN users u ON m.user_id = u.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -188,7 +188,7 @@ if (isset($_GET['search']) && $_GET['search']) {
 $error = $_SESSION['error'] ?? '';
 unset($_SESSION['error']);
 
-$pageScripts = ['loans.js'];
+$pageScripts = ['lend.js'];
 include_once '../../includes/header.php';
 include_once '../../includes/navbar.php';
 include_once '../../includes/sidebar.php';
@@ -199,12 +199,12 @@ include_once '../../includes/sidebar.php';
         <div>
             <h1><i class="fas fa-undo-alt"></i> Return Book</h1>
             <div class="breadcrumb">
-                <a href="../dashboard.php">Home</a> / <a href="../loans/index.php">Loans</a> / Return
+                <a href="../dashboard.php">Home</a> / <a href="../lend/index.php">lend</a> / Return
             </div>
         </div>
         <div class="page-actions">
-            <a href="../loans/index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Loans
+            <a href="../lend/index.php" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to lend
             </a>
         </div>
     </div>
@@ -264,7 +264,7 @@ include_once '../../includes/sidebar.php';
                     <?php endforeach; ?>
                 </div>
             <?php elseif (isset($_GET['search']) && $_GET['search']): ?>
-                <div class="alert alert-info mt-2">No active loans found matching your search</div>
+                <div class="alert alert-info mt-2">No active lend found matching your search</div>
             <?php endif; ?>
         </div>
     </div>
@@ -352,7 +352,7 @@ include_once '../../includes/sidebar.php';
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="fas fa-check"></i> Confirm Return
                         </button>
-                        <a href="../loans/index.php" class="btn btn-secondary">Cancel</a>
+                        <a href="../lend/index.php" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

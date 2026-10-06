@@ -60,7 +60,7 @@ $totalPages = ceil($totalMembers / $limit);
 // Get members
 $sql = "
     SELECT m.*, u.name, u.email, u.phone, u.username, u.profile_image, u.status as user_status,
-           (SELECT COUNT(*) FROM loans WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_loans,
+           (SELECT COUNT(*) FROM lend WHERE member_id = m.id AND status IN ('Borrowed', 'Overdue')) as current_lend,
            (SELECT COUNT(*) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines_count,
            (SELECT COALESCE(SUM(amount), 0) FROM fines WHERE member_id = m.id AND status = 'Unpaid') as outstanding_fines_amount
     FROM members m
@@ -245,7 +245,7 @@ include_once '../../includes/sidebar.php';
                             <th>Email</th>
                             <th>Type</th>
                             <th>Status</th>
-                            <th>Current Loans</th>
+                            <th>Current lend</th>
                             <th>Fines</th>
                             <th>Actions</th>
                         </tr>
@@ -277,7 +277,7 @@ include_once '../../includes/sidebar.php';
                                     <td><?php echo $member['membership_type']; ?></td>
                                     <td><?php echo getStatusBadge($member['status'], 'member'); ?></td>
                                     <td>
-                                        <span class="badge badge-info"><?php echo $member['current_loans']; ?></span>
+                                        <span class="badge badge-info"><?php echo $member['current_lend']; ?></span>
                                     </td>
                                     <td>
                                         <?php if ($member['outstanding_fines_amount'] > 0): ?>

@@ -30,16 +30,16 @@ logMessage("=== Starting overdue processing ===");
 try {
     $pdo = getDBConnection();
     
-    // 1. Update overdue loans
-    logMessage("Updating overdue loans...");
+    // 1. Update overdue lend
+    logMessage("Updating overdue lend...");
     $stmt = $pdo->prepare("
-        UPDATE loans 
+        UPDATE lend 
         SET status = 'Overdue' 
         WHERE status = 'Borrowed' AND due_date < CURDATE()
     ");
     $stmt->execute();
     $overdueCount = $stmt->rowCount();
-    logMessage("Updated $overdueCount loans to overdue status");
+    logMessage("Updated $overdueCount lend to overdue status");
     
     // 2. Process overdue notifications
     logMessage("Processing overdue notifications...");
@@ -47,7 +47,7 @@ try {
         SELECT l.id, l.due_date, l.member_id, 
                m.user_id, b.title as book_title,
                DATEDIFF(CURDATE(), l.due_date) as overdue_days
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id
@@ -60,10 +60,10 @@ try {
         )
     ");
     $stmt->execute();
-    $overdueLoans = $stmt->fetchAll();
+    $overduelend = $stmt->fetchAll();
     
     $notificationCount = 0;
-    foreach ($overdueLoans as $loan) {
+    foreach ($overduelend as $loan) {
         createNotification(
             $pdo,
             $loan['user_id'],
@@ -111,7 +111,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT l.id, l.due_date, l.member_id,
                m.user_id, b.title as book_title
-        FROM loans l
+        FROM lend l
         JOIN members m ON l.member_id = m.id
         JOIN book_copies bc ON l.book_copy_id = bc.id
         JOIN books b ON bc.book_id = b.id

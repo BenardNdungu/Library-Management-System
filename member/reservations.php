@@ -66,7 +66,7 @@ $reservations = $stmt->fetchAll();
 
 // Handle cancel
 if (isset($_GET['cancel']) && isset($_GET['csrf_token'])) {
-    requireCsrfToken($_GET['cancel']);
+    requireCsrfToken($_GET['csrf_token']);
     $reservationId = (int) $_GET['cancel'];
     
     $stmt = $pdo->prepare("
@@ -193,10 +193,7 @@ include_once '../includes/sidebar.php';
                                                 </a>
                                             <?php endif; ?>
                                             <?php if ($reservation['status'] === 'Ready'): ?>
-                                                <a href="../admin/loans/create.php?book_id=<?php echo $reservation['book_id']; ?>" 
-                                                   class="btn btn-sm btn-success">
-                                                    <i class="fas fa-hand-holding-heart"></i> Borrow
-                                                </a>
+                                                <span class="badge badge-info">Ready for pickup at the library</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>

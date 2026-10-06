@@ -692,7 +692,13 @@ img {
 
 .page-header .page-actions {
     display: flex;
+    font-size: 5px;
     gap: 8px;
+}
+
+.dashboard-last-updated {
+    font-size: 1px;
+    margin-left: auto;
 }
 
 /* ========================================

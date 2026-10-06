@@ -24,12 +24,12 @@ $stats['total_books'] = $stmt->fetch()['count'];
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM members WHERE status = 'active'");
 $stats['active_members'] = $stmt->fetch()['count'];
 
-// Current loans
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status IN ('Borrowed', 'Overdue')");
-$stats['current_loans'] = $stmt->fetch()['count'];
+// Current lend
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status IN ('Borrowed', 'Overdue')");
+$stats['current_lend'] = $stmt->fetch()['count'];
 
 // Overdue books
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status = 'Overdue'");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status = 'Overdue'");
 $stats['overdue_books'] = $stmt->fetch()['count'];
 
 // Available copies
@@ -49,7 +49,7 @@ $monthlyBorrowed = [];
 for ($i = 5; $i >= 0; $i--) {
     $month = date('Y-m', strtotime("-$i months"));
     $monthLabel = date('M', strtotime("-$i months"));
-    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE DATE_FORMAT(issue_date, '%Y-%m') = ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE DATE_FORMAT(issue_date, '%Y-%m') = ?");
     $stmt->execute([$month]);
     $monthlyBorrowed['labels'][] = $monthLabel;
     $monthlyBorrowed['values'][] = (int) $stmt->fetch()['count'];
@@ -58,10 +58,10 @@ for ($i = 5; $i >= 0; $i--) {
 // Recent activities
 $recentActivities = [];
 
-// Recent loans
+// Recent lend
 $stmt = $pdo->query("
     SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-    FROM loans l
+    FROM lend l
     JOIN members m ON l.member_id = m.id
     JOIN users u ON m.user_id = u.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -81,7 +81,7 @@ while ($row = $stmt->fetch()) {
 // Recent returns
 $stmt = $pdo->query("
     SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-    FROM loans l
+    FROM lend l
     JOIN members m ON l.member_id = m.id
     JOIN users u ON m.user_id = u.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -154,8 +154,8 @@ include_once '../includes/sidebar.php';
                     <i class="fas fa-hand-holding-heart"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Current Loans</div>
-                    <div class="stat-value"><?php echo $stats['current_loans']; ?></div>
+                    <div class="stat-label">Current lend</div>
+                    <div class="stat-value"><?php echo $stats['current_lend']; ?></div>
                 </div>
             </div>
         </div>
@@ -209,7 +209,7 @@ include_once '../includes/sidebar.php';
                     <i class="fas fa-chart-bar"></i>
                 </div>
                 <div class="stat-info">
-                    <div class="stat-label">Monthly Loans</div>
+                    <div class="stat-label">Monthly lend</div>
                     <div class="stat-value"><?php echo array_sum($monthlyBorrowed['values']); ?></div>
                 </div>
             </div>

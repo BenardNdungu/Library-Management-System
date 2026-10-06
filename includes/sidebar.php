@@ -136,22 +136,22 @@ function isActiveParent($path, $currentDir): string {
             </li>
             
             <li class="nav-section-label">Circulation</li>
-            <!-- Loans -->
-            <li class="nav-item <?php echo isActiveParent('loans', $currentDir) || isActiveParent('returns', $currentDir) ? 'active-parent' : ''; ?>">
-                <a href="#loans-menu" class="nav-link nav-link-toggle" data-toggle="collapse" aria-expanded="<?php echo isActiveParent('loans', $currentDir) || isActiveParent('returns', $currentDir) ? 'true' : 'false'; ?>">
+            <!-- lend -->
+            <li class="nav-item <?php echo isActiveParent('lend', $currentDir) || isActiveParent('returns', $currentDir) ? 'active-parent' : ''; ?>">
+                <a href="#lend-menu" class="nav-link nav-link-toggle" data-toggle="collapse" aria-expanded="<?php echo isActiveParent('lend', $currentDir) || isActiveParent('returns', $currentDir) ? 'true' : 'false'; ?>">
                     <i class="fas fa-hand-holding-heart"></i>
-                    <span>Loans</span>
+                    <span>lend</span>
                     <i class="fas fa-chevron-down"></i>
                 </a>
-                <ul class="nav-submenu <?php echo isActiveParent('loans', $currentDir) || isActiveParent('returns', $currentDir) ? 'show' : ''; ?>" id="loans-menu">
+                <ul class="nav-submenu <?php echo isActiveParent('lend', $currentDir) || isActiveParent('returns', $currentDir) ? 'show' : ''; ?>" id="lend-menu">
                     <li class="nav-item">
-                        <a href="<?php echo APP_URL; ?>/admin/loans/index.php" class="nav-link <?php echo isActive('index.php', $currentPage, $currentDir); ?>">
+                        <a href="<?php echo APP_URL; ?>/admin/lend/index.php" class="nav-link <?php echo isActive('index.php', $currentPage, $currentDir); ?>">
                             <i class="fas fa-list"></i>
-                            <span>All Loans</span>
+                            <span>All lend</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="<?php echo APP_URL; ?>/admin/loans/create.php" class="nav-link <?php echo isActive('create.php', $currentPage, $currentDir); ?>">
+                        <a href="<?php echo APP_URL; ?>/admin/lend/create.php" class="nav-link <?php echo isActive('create.php', $currentPage, $currentDir); ?>">
                             <i class="fas fa-plus-circle"></i>
                             <span>Issue Book</span>
                         </a>

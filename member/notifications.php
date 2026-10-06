@@ -55,7 +55,7 @@ $notifications = $stmt->fetchAll();
 
 // Handle mark as read
 if (isset($_GET['mark_read']) && isset($_GET['csrf_token'])) {
-    requireCsrfToken($_GET['mark_read']);
+    requireCsrfToken($_GET['csrf_token']);
     $notificationId = (int) $_GET['mark_read'];
     
     $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?");
@@ -66,7 +66,7 @@ if (isset($_GET['mark_read']) && isset($_GET['csrf_token'])) {
 
 // Handle mark all as read
 if (isset($_GET['mark_all_read']) && isset($_GET['csrf_token'])) {
-    requireCsrfToken($_GET['mark_all_read']);
+    requireCsrfToken($_GET['csrf_token']);
     
     $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?");
     $stmt->execute([$userId]);

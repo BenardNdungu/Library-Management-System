@@ -28,11 +28,11 @@ $stmt = $pdo->query("SELECT COUNT(*) as count FROM book_copies WHERE status = 'A
 $stats['available_copies'] = $stmt->fetch()['count'];
 
 // Borrowed books
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status IN ('Borrowed', 'Overdue')");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status IN ('Borrowed', 'Overdue')");
 $stats['borrowed_books'] = $stmt->fetch()['count'];
 
 // Overdue books
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM loans WHERE status = 'Overdue'");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM lend WHERE status = 'Overdue'");
 $stats['overdue_books'] = $stmt->fetch()['count'];
 
 // Total members
@@ -64,7 +64,7 @@ $monthlyBorrowed = [];
 for ($i = 11; $i >= 0; $i--) {
     $month = date('Y-m', strtotime("-$i months"));
     $monthLabel = date('M', strtotime("-$i months"));
-    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE DATE_FORMAT(issue_date, '%Y-%m') = ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM lend WHERE DATE_FORMAT(issue_date, '%Y-%m') = ?");
     $stmt->execute([$month]);
     $monthlyBorrowed['labels'][] = $monthLabel;
     $monthlyBorrowed['values'][] = (int) $stmt->fetch()['count'];
@@ -99,7 +99,7 @@ while ($row = $stmt->fetch()) {
 // Most borrowed books
 $stmt = $pdo->query("
     SELECT b.title, COUNT(l.id) as count 
-    FROM loans l 
+    FROM lend l 
     JOIN book_copies bc ON l.book_copy_id = bc.id 
     JOIN books b ON bc.book_id = b.id 
     GROUP BY b.id 
@@ -126,10 +126,10 @@ for ($i = 11; $i >= 0; $i--) {
 // Recent activities
 $recentActivities = [];
 
-// Recent loans
+// Recent lend
 $stmt = $pdo->query("
     SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-    FROM loans l
+    FROM lend l
     JOIN members m ON l.member_id = m.id
     JOIN users u ON m.user_id = u.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -149,7 +149,7 @@ while ($row = $stmt->fetch()) {
 // Recent returns
 $stmt = $pdo->query("
     SELECT l.*, m.member_number, u.name as member_name, b.title as book_title
-    FROM loans l
+    FROM lend l
     JOIN members m ON l.member_id = m.id
     JOIN users u ON m.user_id = u.id
     JOIN book_copies bc ON l.book_copy_id = bc.id
@@ -225,7 +225,7 @@ include_once '../includes/sidebar.php';
             </div>
         </div>
         <div class="page-actions">
-            <span class="text-muted">Last updated: <?php echo date('Y-m-d H:i'); ?></span>
+            <span class="text-muted dashboard-last-updated">Last updated: <?php echo date('Y-m-d H:i'); ?></span>
         </div>
     </div>
 
